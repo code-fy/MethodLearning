@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import operator
 from pip._vendor.distlib.compat import raw_input
+from os import listdir
 
 
 def createDataSet():
@@ -41,12 +42,14 @@ def file2matrix(filename):
         index += 1
     return returnMat, classLabelVector
 
+
 filename = "./datingTestSet2.txt"
 datingDataMat, datingLabels = file2matrix(filename)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.scatter(datingDataMat[:, 1], datingDataMat[:, 2], 15*array(datingLabels), 15*array(datingLabels))
 # plt.show()
+
 
 def autoNorm(dataset):
     minValue = dataset.min(0)
@@ -58,10 +61,9 @@ def autoNorm(dataset):
     normDataset = normDataset / tile(ranges, (m,1))
     return normDataset, ranges, minValue
 
+
 normat, ranges, minValue = autoNorm(datingDataMat)
-print(normat)
-print(ranges)
-print(minValue)
+
 
 def datingClassTest():
     hoRatio = 0.10
@@ -80,6 +82,7 @@ def datingClassTest():
 
     print("the total error rate is : %f" % (erroeCount / float(numTestVecs)))
 
+# 相亲网站敏感度预测
 def classifyPerson():
     resultList = ["not at all", "in small doses", "in large doses"]
     percentTats = float(raw_input("percentage of time spent playing video games?"))
@@ -91,3 +94,44 @@ def classifyPerson():
     classifierResult = classify0((inArr-minVals)/ranges, normat, datingLabels,3)
     print("You will probably like this person: ", resultList[classifierResult - 1])
 
+# 手写数字识别
+def img2vector(filename):
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0,32*i+j] = int(lineStr[j])
+    return returnVect
+
+testVector = img2vector("./testDigits/0_1.txt")
+
+
+def handwritingClassTest():
+    hwLabels = []
+    trainingFileList = listdir("./trainingDigits")
+    m = len(trainingFileList)
+    trainingMat = zeros((m,1024))
+    for i in range(m):
+        fileNameStr = trainingFileList[i]
+        fileStr = fileNameStr.split(".")[0]
+        classNumStr = int(fileStr.split("_")[0])
+        hwLabels.append(classNumStr)
+        trainingMat[i,:] = img2vector("trainingDigits/%s" % fileNameStr)
+    testFileList = listdir("./testDigits")
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split(".")[0]
+        classNumStr = int(fileStr.split("_")[0])
+        vectorUnderTest = img2vector("testDigits/%s" % fileNameStr)
+        classifierReault = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        print("the classifier came back with: %d, the real answer is : %d" % (classifierReault, classNumStr))
+        if(classifierReault != classNumStr):
+            errorCount += 1.0
+    print("\nthe total number of errors is: %d" % errorCount)
+    print("\nthe total error rate is: %f" % (errorCount/float(mTest)))
+
+
+handwritingClassTest()
